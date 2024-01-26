@@ -27,12 +27,17 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
+
+
+        /// database collection
+
         const userCollection = client.db("adoptiondb").collection("users");
         const petCollection = client.db("adoptiondb").collection("pets");
         const donationCollection = client.db("adoptiondb").collection("donations");
+        const adoptionCollection = client.db("adoptiondb").collection("adoption");
 
-
+        /// jwt related api
 
         app.post('/jwt', async (req, res) => {
             const user = req.body;
@@ -42,7 +47,10 @@ async function run() {
             res.send({ token });
         })
 
+        /// middlewares
+
         const verifyToken = (req, res, next) => {
+            // console.log(req.headers);
             console.log('inside verify token', req.headers.authorization);
             if (!req.headers.authorization) {
                 return res.status(401).send({
@@ -59,6 +67,8 @@ async function run() {
             })
         }
 
+        /// verify admin afrwe verification
+
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
             const query = { email: email };
@@ -70,12 +80,33 @@ async function run() {
             next();
         }
 
+        /**
+         * 
+         *  USERS API
+         * 
+         */
 
-
+        /// users api get
         app.get('/users', async (req, res) => {
+
             const result = await userCollection.find().toArray();
             res.send(result);
         })
+
+        /// users api post
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const query = { email: user.email };
+            const existingUser = await userCollection.findOne(query);
+            if (existingUser) {
+                return res.send({ message: 'User already exist', insertedId: null })
+            }
+            const result = await userCollection.insertOne(user);
+            res.send(result);
+        })
+
+        /// user + admin api get
 
         app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
@@ -89,19 +120,10 @@ async function run() {
                 admin = user?.role === 'admin';
             }
             res.send({ admin });
+
         })
 
-
-        app.post('/users', async (req, res) => {
-            const user = req.body;
-            const query = { email: user.email };
-            const existingUser = await userCollection.findOne(query);
-            if (existingUser) {
-                return res.send({ message: 'User already exist', insertedId: null })
-            }
-            const result = await userCollection.insertOne(user);
-            res.send(result);
-        })
+        /// user + admin patch
 
         app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
@@ -113,8 +135,9 @@ async function run() {
             }
             const result = await userCollection.updateOne(filter, updateDoc);
             res.send(result);
-
         });
+
+        /// user + admin patch
 
         app.patch('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -129,10 +152,229 @@ async function run() {
 
         });
 
+        /**
+         * 
+         *  PETS API
+         * 
+         */
+
+        /// pets api get
+
+        app.get('/pets', async (req, res) => {
+            const result = await petCollection.find().toArray();
+            res.send(result);
+        })
+
+        /// pets api post
 
         app.post('/pets', async (req, res) => {
             const list = req.body;
             const result = await petCollection.insertOne(list);
+            res.send(result);
+        })
+
+        /// pets individual api get
+
+        app.get('/pets/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await petCollection.findOne(query);
+            res.send(result);
+        })
+
+        /// pets individual api patch
+
+        app.patch('/pets/:id', async (req, res) => {
+            const item = req.body;
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    name: item.name,
+                    age: item.age,
+                    category: item.category,
+                    location: item.location,
+                    shortdescription: item.shortdescription,
+                    longdescription: item.longdescription,
+                    image: item.image,
+                    time: item.time
+                }
+            }
+            const result = await petCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        //pets individual api put
+
+        app.put('/pets/:id', async (req, res) => {
+            const id = req.params.id;
+            const pet = req.body;
+            // console.log(id, user);
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedUser = {
+                $set: {
+                    name: pet.name,
+                    age: pet.age,
+                    category: pet.category,
+                    location: pet.location,
+                    shortdescription: pet.shortdescription,
+                    longdescription: pet.longdescription,
+                    image: pet.image,
+                    time: pet.time,
+                    email: pet.email,
+                    adopted: pet.adopted
+                }
+            }
+            const result = await petCollection.updateOne(filter, updatedUser, options);
+            res.send(result);
+        })
+
+        /// pets individual api patch
+
+        app.patch('/pets/:id', async (req, res) => {
+            const item = req.body;
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    adopted: item.adopted
+                }
+            }
+            const result = await petCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        /// pets individual api delete
+
+        app.delete('/pets/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await petCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        /**
+         * 
+         * DONATIONS API
+         * 
+         */
+
+        /// donations api get
+
+        app.get('/donations', async (req, res) => {
+            const result = await donationCollection.find().toArray();
+            res.send(result);
+        })
+
+        /// donations api post
+
+        app.post('/donations', async (req, res) => {
+            const list = req.body;
+            const result = await donationCollection.insertOne(list);
+            res.send(result);
+        })
+
+        /// donations individual api get
+
+        app.get('/donations/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await donationCollection.findOne(query);
+            res.send(result);
+        })
+
+
+        app.put('/donations/:id', async (req, res) => {
+            const id = req.params.id;
+            const don = req.body;
+            // console.log(id, user);
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedDon = {
+                $set: {
+                    name: don.name,
+                    maxdonation: don.maxdonation,
+                    lastdate: don.lastdate,
+                    shortdescription: don.shortdescription,
+                    longdescription: don.longdescription,
+                    image: don.image,
+                    time: don.time,
+                    email: don.email,
+                    donstatus: don.donstatus
+                }
+            }
+            const result = await donationCollection.updateOne(filter, updatedDon, options);
+            res.send(result);
+        })
+
+
+
+
+
+
+
+        /// donations individual api patch
+
+        app.patch('/donations/:id', async (req, res) => {
+            const item = req.body;
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    name: item.name,
+                    maxdonation: item.maxdonation,
+                    lastdate: item.lastdate,
+                    shortdescription: item.shortdescription,
+                    longdescription: item.longdescription,
+                    image: item.image,
+                    time: item.time
+                }
+            }
+            const result = await donationCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        /// donations individual api delete
+
+        app.delete('/donations/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await donationCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+
+        // 
+
+        app.get('/adoption', async (req, res) => {
+            const result = await adoptionCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.post('/adoption', async (req, res) => {
+            const list = req.body;
+            const result = await adoptionCollection.insertOne(list);
+            res.send(result);
+        })
+        app.patch('/adoption/:id', async (req, res) => {
+
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    adpreq: "false"
+                }
+            }
+            const result = await adoptionCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+        app.delete('/adoption/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await adoptionCollection.deleteOne(query);
             res.send(result);
         })
 
@@ -150,9 +392,19 @@ async function run() {
 
 
 
+
+
+
+
+
+
+
+
+        ///////////////////////////////////////////////////////////////
+
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
