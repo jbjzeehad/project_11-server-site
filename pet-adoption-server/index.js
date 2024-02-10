@@ -36,6 +36,7 @@ async function run() {
         const petCollection = client.db("adoptiondb").collection("pets");
         const donationCollection = client.db("adoptiondb").collection("donations");
         const adoptionCollection = client.db("adoptiondb").collection("adoption");
+        const courseCollection = client.db("adoptiondb").collection("courses");
 
         /// jwt related api
 
@@ -151,6 +152,92 @@ async function run() {
             res.send(result);
 
         });
+
+        /**
+         * 
+         *  COURSES API
+         * 
+         */
+        /// courses api get
+
+        app.get('/courses', async (req, res) => {
+            const result = await courseCollection.find().toArray();
+            res.send(result);
+        })
+
+        /// courses api post
+
+        app.post('/courses', async (req, res) => {
+            const list = req.body;
+            const result = await courseCollection.insertOne(list);
+            res.send(result);
+        })
+
+        /// courses individual api get
+
+        app.get('/courses/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await courseCollection.findOne(query);
+            res.send(result);
+        })
+
+        // courses individual api patch
+
+        app.patch('/courses/:id', async (req, res) => {
+            const item = req.body;
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    name: item.name,
+                    instructor: item.instructor,
+                    duration: item.duration,
+                    location: item.location,
+                    outline: item.outline,
+                    image: item.image,
+                }
+            }
+            const result = await courseCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        // courses individual api put
+
+        app.put('/courses/:id', async (req, res) => {
+            const id = req.params.id;
+            const course = req.body;
+            // console.log(id, user);
+            const filter = { _id: new ObjectId(id) };
+            const options = { upsert: true };
+            const updatedUser = {
+                $set: {
+                    name: course.name,
+                    instructor: course.instructor,
+                    duration: course.duration,
+                    location: course.location,
+                    outline: course.outline,
+                    image: course.image,
+                    email: course.email,
+                    endcourse: course.endcourse
+                }
+            }
+            const result = await courseCollection.updateOne(filter, updatedUser, options);
+            res.send(result);
+        })
+
+        // courses individual api delete
+
+        app.delete('/courses/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await courseCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+
 
         /**
          * 
