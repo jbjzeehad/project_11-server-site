@@ -37,6 +37,7 @@ async function run() {
         const donationCollection = client.db("adoptiondb").collection("donations");
         const adoptionCollection = client.db("adoptiondb").collection("adoption");
         const courseCollection = client.db("adoptiondb").collection("courses");
+        const enrolledCollection = client.db("adoptiondb").collection("enrolled");
 
         /// jwt related api
 
@@ -462,6 +463,38 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await adoptionCollection.deleteOne(query);
+            res.send(result);
+        })
+
+
+
+        ///////////////////////////////
+        app.get('/enrolled', async (req, res) => {
+            const result = await enrolledCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.post('/enrolled', async (req, res) => {
+            const list = req.body;
+            const result = await enrolledCollection.insertOne(list);
+            res.send(result);
+        })
+        app.patch('/enrolled/:id', async (req, res) => {
+
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    finished: "true"
+                }
+            }
+            const result = await enrolledCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+        app.delete('/enrolled/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await enrolledCollection.deleteOne(query);
             res.send(result);
         })
 
