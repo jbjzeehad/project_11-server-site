@@ -23,12 +23,10 @@ const client = new MongoClient(uri, {
     }
 });
 
-
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
         // await client.connect();
-
 
         /// database collection
 
@@ -236,10 +234,6 @@ async function run() {
             res.send(result);
         })
 
-
-
-
-
         /**
          * 
          *  PETS API
@@ -372,6 +366,7 @@ async function run() {
             res.send(result);
         })
 
+        /// donations individual api put
 
         app.put('/donations/:id', async (req, res) => {
             const id = req.params.id;
@@ -395,12 +390,6 @@ async function run() {
             const result = await donationCollection.updateOne(filter, updatedDon, options);
             res.send(result);
         })
-
-
-
-
-
-
 
         /// donations individual api patch
 
@@ -432,21 +421,29 @@ async function run() {
             res.send(result);
         })
 
+        /**
+        * 
+        *  ADOPTION API
+        * 
+        */
 
-
-
-        // 
+        // adoption api get
 
         app.get('/adoption', async (req, res) => {
             const result = await adoptionCollection.find().toArray();
             res.send(result);
         })
 
+        // adoption api post
+
         app.post('/adoption', async (req, res) => {
             const list = req.body;
             const result = await adoptionCollection.insertOne(list);
             res.send(result);
         })
+
+        // adoption individual api patch
+
         app.patch('/adoption/:id', async (req, res) => {
 
             const id = req.params.id;
@@ -459,6 +456,9 @@ async function run() {
             const result = await adoptionCollection.updateOne(filter, updateDoc);
             res.send(result);
         });
+
+        // adoption individual api delete
+
         app.delete('/adoption/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -466,19 +466,29 @@ async function run() {
             res.send(result);
         })
 
+        /**
+        * 
+        *  ENROLLED API
+        * 
+        */
 
+        /// enrolled api get
 
-        ///////////////////////////////
         app.get('/enrolled', async (req, res) => {
             const result = await enrolledCollection.find().toArray();
             res.send(result);
         })
+
+        /// enrolled api post
 
         app.post('/enrolled', async (req, res) => {
             const list = req.body;
             const result = await enrolledCollection.insertOne(list);
             res.send(result);
         })
+
+        /// enrolled individual api patch
+
         app.patch('/enrolled/:id', async (req, res) => {
 
             const id = req.params.id;
@@ -491,6 +501,9 @@ async function run() {
             const result = await enrolledCollection.updateOne(filter, updateDoc);
             res.send(result);
         });
+
+        /// enrolled individual api delete
+
         app.delete('/enrolled/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -498,29 +511,7 @@ async function run() {
             res.send(result);
         })
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        ///////////////////////////////////////////////////////////////
+        ////////////
 
         // Send a ping to confirm a successful connection
         // await client.db("admin").command({ ping: 1 });
